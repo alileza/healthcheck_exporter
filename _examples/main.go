@@ -9,15 +9,10 @@ import (
 )
 
 func main() {
-	healthcheck.Register(healthcheck.Spec{
-		Name:     "my-awesome-database",
-		Interval: time.Second,
-		Handle: func() error {
-			return nil
-		},
-	})
+	healthcheck.Register("my-awesome-database", time.Second, healthcheck.Handler(func() error {
+		return nil
+	}))
 	healthcheck.Run()
 
 	http.ListenAndServe(":9000", promhttp.Handler())
-
 }

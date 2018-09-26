@@ -29,7 +29,7 @@ func init() {
 }
 
 type Checker struct {
-	specs   []Spec
+	specs   []spec
 	tickers []*time.Ticker
 }
 
@@ -37,7 +37,7 @@ func New() *Checker {
 	return &Checker{}
 }
 
-type Spec struct {
+type spec struct {
 	Name     string
 	Interval time.Duration
 	Handle   Handler
@@ -45,12 +45,16 @@ type Spec struct {
 
 type Handler func() error
 
-func Register(s Spec) {
-	baseChecker.Register(s)
+func Register(name string, interval time.Duration, handle Handler) {
+	baseChecker.Register(name, interval, handle)
 }
 
-func (c *Checker) Register(s Spec) {
-	c.specs = append(c.specs, s)
+func (c *Checker) Register(name string, interval time.Duration, handle Handler) {
+	c.specs = append(c.specs, spec{
+		Name:     name,
+		Interval: interval,
+		Handle:   handle,
+	})
 }
 
 func Run() {
@@ -58,25 +62,25 @@ func Run() {
 }
 
 func (c *Checker) Run() {
-	for _, spec := range c.specs {
-		t := func(spec Spec) *time.Ticker {
-			ticker := time.NewTicker(spec.Interval)
+	for _, s := range c.specs {
+		t := func(s spec) *time.Ticker {
+			ticker := time.NewTicker(s.Interval)
 			go func() {
 				for range ticker.C {
 					t := time.Now()
 
-					err := spec.Handle()
+					err := s.Handle()
 
-					healthLatency.WithLabelValues(spec.Name).Set(time.Since(t).Seconds())
+					healthLatency.WithLabelValues(s.Name).Set(time.Since(t).Seconds())
 					if err != nil {
-						healthStatus.WithLabelValues(spec.Name).Set(0)
+						healthStatus.WithLabelValues(s.Name).Set(0)
 						continue
 					}
-					healthStatus.WithLabelValues(spec.Name).Set(1)
+					healthStatus.WithLabelValues(s.Name).Set(1)
 				}
 			}()
 			return ticker
-		}(spec)
+		}(s)
 
 		c.tickers = append(c.tickers, t)
 	}
