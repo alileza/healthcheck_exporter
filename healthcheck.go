@@ -13,8 +13,8 @@ var (
 
 	healthStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Name:      "status",
-		Help:      "A gauge of healthcheck status",
+		Name:      "up",
+		Help:      "A gauge of healthcheck up status",
 	}, []string{"name"})
 
 	healthLatency = prometheus.NewGaugeVec(prometheus.GaugeOpts{
